@@ -1,5 +1,5 @@
-use std::io::{self, BufRead};
 use std::fmt;
+use std::io::{self, BufRead};
 use std::iter::Peekable;
 use std::str::{CharIndices, FromStr};
 
@@ -38,10 +38,10 @@ impl Term for CLTerm {
                     CLTerm::Atom(a) => {
                         let comb = env(&a);
                         match comb {
-                            Some(CLFun{arity: n, ..}) if cdr.len() >= n => true, 
-                            _ => CLTerm::List(cdr.to_vec()).has_redex(env)
+                            Some(CLFun { arity: n, .. }) if cdr.len() >= n => true,
+                            _ => CLTerm::List(cdr.to_vec()).has_redex(env),
                         }
-                    },
+                    }
                     CLTerm::List(nest_car) => {
                         CLTerm::List([&nest_car, cdr].concat()).has_redex(env)
                     }
@@ -49,7 +49,7 @@ impl Term for CLTerm {
             }
         }
     }
-    
+
     fn substitute(sub: &CLSub, args: &[Box<CLTerm>]) -> CLTerm {
         match sub {
             CLSub::Sub(n) if *n <= args.len() => (*args[(*n as usize)]).clone(),
@@ -76,17 +76,18 @@ impl Term for CLTerm {
                     CLTerm::Atom(a) => {
                         let comb = env(&a);
                         match comb {
-                            Some(CLFun{arity: n, fun: f}) if cdr.len() >= n => {
+                            Some(CLFun { arity: n, fun: f }) if cdr.len() >= n => {
                                 let sub = Self::substitute(&f, &cdr[0..n]);
                                 let mut newcdr = cdr.to_vec();
-                                if newcdr.len() > n { // Prevents extra nestings
+                                if newcdr.len() > n {
                                     newcdr.drain(0..n);
                                     newcdr.insert(0, Box::new(sub));
                                     *self = CLTerm::List(newcdr)
                                 } else {
+                                    // Prevents extra nestings
                                     *self = sub
                                 }
-                            }, 
+                            }
                             _ => {
                                 let mut res = CLTerm::List(cdr.to_vec());
                                 res.reduce(env);
@@ -97,15 +98,15 @@ impl Term for CLTerm {
                                         v2.push(Box::new(CLTerm::Atom(a.to_string())));
                                         v2.push(Box::new(res));
                                         *self = CLTerm::List(v2)
-                                    },
+                                    }
                                     CLTerm::List(mut v2) => {
                                         v2.insert(0, Box::new(CLTerm::Atom(a.to_string())));
                                         *self = CLTerm::List(v2)
-                                    },
+                                    }
                                 }
                             }
                         }
-                    },
+                    }
                     CLTerm::List(nest_car) => {
                         *self = CLTerm::List([&nest_car, cdr].concat().to_vec());
                         self.reduce(env);
@@ -149,7 +150,7 @@ impl fmt::Display for CLTerm {
 enum CLTermError {
     TooManyOpenParens,
     TooManyCloseParens,
-    EmptyTerm
+    EmptyTerm,
 }
 impl fmt::Display for CLTermError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -165,20 +166,28 @@ impl FromStr for CLTerm {
     type Err = CLTermError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         fn sub_atom(iter: &mut Peekable<CharIndices>) -> Result<CLTerm, CLTermError> {
-            let mut atom : Vec<char> = Vec::new();
-            while let Some((_,c)) = iter.peek() {
+            let mut atom: Vec<char> = Vec::new();
+            while let Some((_, c)) = iter.peek() {
                 match c {
                     ' ' | '\t' | '\n' | '(' | ')' => break,
-                    _ => {let (_,ch) = iter.next().unwrap(); atom.push(ch); },
+                    _ => {
+                        let (_, ch) = iter.next().unwrap();
+                        atom.push(ch);
+                    }
                 }
             }
             Ok(CLTerm::Atom(atom.into_iter().collect()))
         }
-        fn sub_term(iter: &mut Peekable<CharIndices>, mut num: i32) -> Result<(CLTerm,i32), CLTermError> {
+        fn sub_term(
+            iter: &mut Peekable<CharIndices>,
+            mut num: i32,
+        ) -> Result<(CLTerm, i32), CLTermError> {
             let mut res = Vec::new();
             while let Some((_, c)) = iter.peek() {
                 match c {
-                    ' ' | '\t' | '\n' => { iter.next(); },
+                    ' ' | '\t' | '\n' => {
+                        iter.next();
+                    }
                     '(' => {
                         iter.next();
                         let (term, val) = sub_term(iter, num + 1)?;
@@ -187,16 +196,16 @@ impl FromStr for CLTerm {
                             return Err(CLTermError::EmptyTerm);
                         }
                         res.push(Box::new(term));
-                    },
+                    }
                     ')' => {
                         num -= 1;
                         iter.next();
                         break;
-                    },
+                    }
                     _ => {
                         let term = sub_atom(iter)?;
                         res.push(Box::new(term));
-                    },
+                    }
                 }
             }
             if res.len() == 0 {
@@ -215,18 +224,20 @@ impl FromStr for CLTerm {
             Err(CLTermError::TooManyOpenParens)
         } else {
             Ok(term)
-        }
+        };
     }
 }
 
 fn env(s: &str) -> Option<CLFun> {
     match s {
-        "I" => {
-            Some(CLFun{arity: 1, fun: CLSub::Sub(0) })
-        },
-        "K" => {
-            Some(CLFun{arity: 2, fun: CLSub::Sub(0) })
-        },
+        "I" => Some(CLFun {
+            arity: 1,
+            fun: CLSub::Sub(0),
+        }),
+        "K" => Some(CLFun {
+            arity: 2,
+            fun: CLSub::Sub(0),
+        }),
         "S" => {
             let mut v1 = Vec::new();
             v1.push(Box::new(CLSub::Sub(0)));
@@ -237,8 +248,11 @@ fn env(s: &str) -> Option<CLFun> {
             let inner = CLSub::List(v2);
             v1.push(Box::new(inner));
             let outer = CLSub::List(v1);
-            Some(CLFun{arity: 3, fun: outer })
-        },
+            Some(CLFun {
+                arity: 3,
+                fun: outer,
+            })
+        }
         _ => None,
     }
 }
@@ -256,7 +270,7 @@ fn main() {
                             x.reduce(env);
                             println!(" {}", format!("{}", x));
                         }
-                    },
+                    }
                     Err(e) => println!("Error: {}", format!("{}", e)),
                 }
             }
