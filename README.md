@@ -5,12 +5,12 @@
 - It creates fun and puzzling programs.
 
 ## What is combinatory logic? 
-Combinatory logic is a simple pure-functional model of computation similar to the λ-calculus. It's major differentiating feature is that it does not have quantified variables.
-It's basic "functions" are called combinators.
+Combinatory logic is a simple pure-functional model of computation similar to the λ-calculus. Its major differentiating feature is that it does not have quantified variables.
+Its basic "functions" are called combinators.
 
 ### Combinators
 A combinator is n-ary, taking in n following terms and using them to produce a new combinatory logic expression, which is then substituted in place for it and the arguments.
-If it doesn't have the n required terms to perform the replacement it is considered fully simplified and it's sub-expressions are checked for further simplification.
+If it doesn't have the n required terms to perform the replacement it is considered fully simplified and its sub-expressions are checked for further simplification.
 
 #### The three basic combinators
 ```
@@ -78,7 +78,7 @@ cargo build --lib
 cargo build --lib --target=wasm32-unknown-unknown
 ```
 ### Note on wasm support
-The wasm support is experimental, it requires that you have the ``wasm32-unknown-unknown`` target installed for rust. It also produces a large file because currently the combinators do allocations and use the standard library which adds overhead to the wasm file.
+The wasm support is experimental, it requires that you have the ``wasm32-unknown-unknown`` target installed for rust. It also produces a large file because the combinators do allocations and use the standard library which adds overhead to the wasm file.
 
 # License
 - GPL v2
