@@ -21,6 +21,7 @@ pub struct CLFun {
     fun: CLSub,
 }
 
+#[derive(Debug)]
 pub enum CLTermError {
     TooManyOpenParens,
     TooManyCloseParens,
@@ -156,7 +157,7 @@ impl fmt::Display for CLTermError {
         match self {
             CLTermError::TooManyOpenParens => write!(f, "Too many open parens"),
             CLTermError::TooManyCloseParens => write!(f, "Too many close parens"),
-            CLTermError::EmptyTerm => write!(f, "Empty subterm"),
+            CLTermError::EmptyTerm => write!(f, "Empty or incomplete empty subterm"),
         }
     }
 }
@@ -191,7 +192,7 @@ impl FromStr for CLTerm {
                         iter.next();
                         let (term, val) = sub_term(iter, num + 1)?;
                         num = val;
-                        if term == CLTerm::Empty && (num != 0 || res.len() > 0) {
+                        if term == CLTerm::Empty {
                             return Err(CLTermError::EmptyTerm);
                         }
                         res.push(Box::new(term));
