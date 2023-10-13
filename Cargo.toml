@@ -9,7 +9,6 @@ license = "GPL-2.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 cfg-if = "*"
-wee_alloc = {version = "*", optional = true }
 wasm-bindgen = "*"
 
 [lib]

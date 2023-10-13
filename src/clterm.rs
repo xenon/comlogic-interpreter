@@ -256,3 +256,213 @@ pub fn env(s: &str) -> Option<CLFun> {
         _ => None,
     }
 }
+
+#[cfg(test)]
+mod reductions {
+    use super::*;
+    #[test]
+    fn epsilon() {
+        let input = CLTerm::from_str("").unwrap();
+        let mut out = input.clone();
+        out.reduce(env);
+        assert!(!input.has_redex(env));
+        assert_eq!(input, out);
+    }
+
+    #[test]
+    fn one_term() {
+        let input = CLTerm::from_str("x").unwrap();
+        let mut out = input.clone();
+        out.reduce(env);
+        assert!(!input.has_redex(env));
+        assert_eq!(input, out);
+    }
+
+    #[test]
+    fn i_combinator() {
+        let input = CLTerm::from_str("I x").unwrap();
+        let output = CLTerm::from_str("x").unwrap();
+        let mut res = input.clone();
+        res.reduce(env);
+        assert!(input.has_redex(env));
+        assert_eq!(output, res);
+    }
+
+    #[test]
+    fn i_combinator_arity_0() {
+        let input = CLTerm::from_str("I").unwrap();
+        let mut out = input.clone();
+        out.reduce(env);
+        assert!(!input.has_redex(env));
+        assert_eq!(input, out);
+    }
+
+    #[test]
+    fn i_combinator_arity_1() {
+        let input = CLTerm::from_str("I x y z").unwrap();
+        let output = CLTerm::from_str("x y z").unwrap();
+        let mut res = input.clone();
+        res.reduce(env);
+        assert!(input.has_redex(env));
+        assert_eq!(output, res);
+    }
+
+    #[test]
+    fn k_combinator() {
+        let input = CLTerm::from_str("K x y").unwrap();
+        let output = CLTerm::from_str("x").unwrap();
+        let mut res = input.clone();
+        res.reduce(env);
+        assert!(input.has_redex(env));
+        assert_eq!(output, res);
+    }
+
+    #[test]
+    fn k_combinator_arity_0() {
+        let input = CLTerm::from_str("K").unwrap();
+        let mut out = input.clone();
+        out.reduce(env);
+        assert!(!input.has_redex(env));
+        assert_eq!(input, out);
+    }
+
+    #[test]
+    fn k_combinator_arity_1() {
+        let input = CLTerm::from_str("K x").unwrap();
+        let mut out = input.clone();
+        out.reduce(env);
+        assert!(!input.has_redex(env));
+        assert_eq!(input, out);
+    }
+
+    #[test]
+    fn k_combinator_arity_2() {
+        let input = CLTerm::from_str("K x y z a").unwrap();
+        let output = CLTerm::from_str("x z a").unwrap();
+        let mut res = input.clone();
+        res.reduce(env);
+        assert!(input.has_redex(env));
+        assert_eq!(output, res);
+    }
+
+    #[test]
+    fn s_combinator_0() {
+        let input = CLTerm::from_str("S x y z").unwrap();
+        let output = CLTerm::from_str("x z (y z)").unwrap();
+        let mut res = input.clone();
+        res.reduce(env);
+        assert!(input.has_redex(env));
+        assert_eq!(output, res);
+    }
+
+    #[test]
+    fn s_combinator_1() {
+        let input = CLTerm::from_str("S (a b c) (S x y z) (d e f)").unwrap();
+        let output = CLTerm::from_str("(a b c) (d e f) ((S x y z) (d e f))").unwrap();
+        let mut res = input.clone();
+        res.reduce(env);
+        assert!(input.has_redex(env));
+        assert_eq!(output, res);
+    }
+
+    #[test]
+    fn s_combinator_arity_0() {
+        let input = CLTerm::from_str("S").unwrap();
+        let mut out = input.clone();
+        out.reduce(env);
+        assert!(!input.has_redex(env));
+        assert_eq!(input, out);
+    }
+
+    #[test]
+    fn s_combinator_arity_1() {
+        let input = CLTerm::from_str("S x").unwrap();
+        let mut out = input.clone();
+        out.reduce(env);
+        assert!(!input.has_redex(env));
+        assert_eq!(input, out);
+    }
+
+    #[test]
+    fn s_combinator_arity_2() {
+        let input = CLTerm::from_str("S x y").unwrap();
+        let mut out = input.clone();
+        out.reduce(env);
+        assert!(!input.has_redex(env));
+        assert_eq!(input, out);
+    }
+
+    #[test]
+    fn s_combinator_arity_3() {
+        let input = CLTerm::from_str("S x y z a b c").unwrap();
+        let output = CLTerm::from_str("(x z (y z)) a b c").unwrap();
+        let mut res = input.clone();
+        res.reduce(env);
+        assert!(input.has_redex(env));
+        assert_eq!(output, res);
+    }
+}
+
+#[cfg(test)]
+mod errors {
+    use super::*;
+    #[test]
+    fn no_terms_0() {
+        let input = CLTerm::from_str("()");
+        assert!(input.is_err());
+    }
+
+    #[test]
+    fn no_terms_1() {
+        let input = CLTerm::from_str("((()))");
+        assert!(input.is_err());
+    }
+
+    #[test]
+    fn not_closed_0() {
+        let input = CLTerm::from_str("(");
+        assert!(input.is_err());
+    }
+
+    #[test]
+    fn not_closed_1() {
+        let input = CLTerm::from_str("(x y ( z )");
+        assert!(input.is_err());
+    }
+
+    #[test]
+    fn not_closed_2() {
+        let input = CLTerm::from_str("((((((x)))))");
+        assert!(input.is_err());
+    }
+
+    #[test]
+    fn not_opened_0() {
+        let input = CLTerm::from_str(")");
+        assert!(input.is_err());
+    }
+
+    #[test]
+    fn not_opened_1() {
+        let input = CLTerm::from_str("(x y ( z )))");
+        assert!(input.is_err());
+    }
+
+    #[test]
+    fn not_opened_2() {
+        let input = CLTerm::from_str("(((((x))))))");
+        assert!(input.is_err());
+    }
+
+    #[test]
+    fn complex_0() {
+        let input = CLTerm::from_str("S (x) (y z) (a b c) (d");
+        assert!(input.is_err());
+    }
+
+    #[test]
+    fn complex_1() {
+        let input = CLTerm::from_str("S (x) (y z)) (a b c)");
+        assert!(input.is_err());
+    }
+}
